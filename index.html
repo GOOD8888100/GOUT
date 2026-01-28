@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOUT - 去中心化交易所</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00F0FF',
+                        secondary: '#9D4EDD',
+                        dark: '#0A0E29',
+                        darker: '#05081C',
+                        light: '#E0E0E0',
+                        success: '#00C853',
+                        warning: '#FFA726',
+                        danger: '#FF5252',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(0, 240, 255, 0.5)' },
+                            '100%': { boxShadow: '0 0 20px rgba(0, 240, 255, 0.8), 0 0 30px rgba(157, 78, 221, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+            }
+            .text-gradient {
+                background-clip: text;
+                -webkit-background-clip: text;
+                color: transparent;
+                background-image: linear-gradient(90deg, #00F0FF, #9D4EDD);
+            }
+            .border-glow {
+                box-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+            }
+            .border-glow-hover {
+                transition: all 0.3s ease;
+            }
+            .border-glow-hover:hover {
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.8), 0 0 25px rgba(157, 78, 221, 0.6);
+            }
+            .bg-grid {
+                background-image: 
+                    linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+            .bg-glass {
+                background: rgba(10, 14, 41, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .arrow-pulse {
+                animation: arrow-pulse 2s infinite;
+            }
+            @keyframes arrow-pulse {
+                0% { opacity: 0.5; transform: scale(0.95); }
+                50% { opacity: 1; transform: scale(1.05); }
+                100% { opacity: 0.5; transform: scale(0.95); }
+            }
+            .token-input {
+                background: rgba(10, 14, 41, 0.5);
+                border: 1px solid rgba(0, 240, 255, 0.3);
+                transition: all 0.3s ease;
+            }
+            .token-input:focus {
+                border-color: #00F0FF;
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            }
+            .btn-primary {
+                background: linear-gradient(90deg, #00F0FF, #9D4EDD);
+                transition: all 0.3s ease;
+            }
+            .btn-primary:hover {
+                background: linear-gradient(90deg, #00D4FF, #8A3FD0);
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+                transform: translateY(-2px);
+            }
+            .btn-secondary {
+                background: rgba(10, 14, 41, 0.7);
+                border: 1px solid rgba(0, 240, 255, 0.5);
+                transition: all 0.3s ease;
+            }
+            .btn-secondary:hover {
+                border-color: #00F0FF;
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            }
+            .nav-item {
+                position: relative;
+                transition: all 0.3s ease;
+            }
+            .nav-item::after {
+                content: '';
+                position: absolute;
+                bottom: -5px;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background: linear-gradient(90deg, #00F0FF, #9D4EDD);
+                transition: width 0.3s ease;
+            }
+            .nav-item:hover::after,
+            .nav-item.active::after {
+                width: 100%;
+            }
+            .token-option {
+                transition: all 0.2s ease;
+            }
+            .token-option:hover {
+                background: rgba(0, 240, 255, 0.1);
+            }
+            .chart-container {
+                position: relative;
+                height: 300px;
+                width: 100%;
+            }
+            .tooltip {
+                position: absolute;
+                background: rgba(10, 14, 41, 0.9);
+                border: 1px solid rgba(0, 240, 255, 0.5);
+                border-radius: 4px;
+                padding: 8px 12px;
+                font-size: 12px;
+                z-index: 100;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            .tooltip.show {
+                opacity: 1;
+            }
+            .loading-spinner {
+                border: 3px solid rgba(0, 240, 255, 0.3);
+                border-radius: 50%;
+                border-top: 3px solid #00F0FF;
+                width: 24px;
+                height: 24px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .particle {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(0, 240, 255, 0.5);
+                pointer-events: none;
+                animation: particle-float 8s infinite ease-in-out;
+            }
+            @keyframes particle-float {
+                0%, 100% {
+                    transform: translateY(0) translateX(0);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 0.5;
+                }
+                90% {
+                    opacity: 0.5;
+                }
+                100% {
+                    transform: translateY(-100vh) translateX(100px);
+                    opacity: 0;
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-light min-h-screen bg-grid overflow-x-hidden">
+    <!-- 粒子背景效果 -->
+    <div id="particles-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+
+    <!-- 导航栏 -->
+    <header class="bg-glass border-b border-primary/20 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">G</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gradient">GOUT</h1>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="nav-item active font-medium">交换</a>
+                <a href="#" class="nav-item font-medium">流动性</a>
+                <a href="#" class="nav-item font-medium">农场</a>
+                <a href="#" class="nav-item font-medium">投票</a>
+                <a href="#" class="nav-item font-medium">NFT</a>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block">
+                    <select id="network-selector" class="bg-dark border border-primary/30 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary">
+                        <option value="bsc">BNB Chain</option>
+                        <option value="eth">Ethereum</option>
+                        <option value="polygon">Polygon</option>
+                        <option value="avax">Avalanche</option>
+                    </select>
+                </div>
+                <button id="connect-wallet-btn" class="btn-primary rounded-md px-6 py-2 font-medium text-white flex items-center space-x-2 border-glow-hover animate-glow">
+                    <i class="fa fa-wallet"></i>
+                    <span>连接钱包</span>
+                </button>
+                <button class="md:hidden text-2xl">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8 relative z-10">
+        <!-- 移动端导航 -->
+        <div class="md:hidden mb-6 bg-glass rounded-xl p-4 border border-primary/20">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">菜单</h2>
+                <select id="mobile-network-selector" class="bg-dark border border-primary/30 rounded-md px-2 py-1 text-sm">
+                    <option value="bsc">BNB Chain</option>
+                    <option value="eth">Ethereum</option>
+                    <option value="polygon">Polygon</option>
+                    <option value="avax">Avalanche</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button class="bg-primary/10 border border-primary/30 rounded-lg py-2 text-sm font-medium active">交换</button>
+                <button class="bg-dark border border-primary/30 rounded-lg py-2 text-sm font-medium">流动性</button>
+                <button class="bg-dark border border-primary/30 rounded-lg py-2 text-sm font-medium">农场</button>
+                <button class="bg-dark border border-primary/30 rounded-lg py-2 text-sm font-medium">投票</button>
+                <button class="bg-dark border border-primary/30 rounded-lg py-2 text-sm font-medium">NFT</button>
+                <button class="bg-dark border border-primary/30 rounded-lg py-2 text-sm font-medium">更多</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧边栏 - 市场数据 -->
+            <div class="hidden lg:block">
+                <div class="bg-glass rounded-xl p-4 border border-primary/20 mb-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fa fa-line-chart text-primary mr-2"></i>
+                        市场数据
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-2 border-b border-primary/10">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-bold">B</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">BNB</div>
+                                    <div class="text-xs text-gray-400">BNB Chain</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$312.45</div>
+                                <div class="text-xs text-green-400">+2.4%</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-primary/10">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-bold">B</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">BTC</div>
+                                    <div class="text-xs text-gray-400">Bitcoin</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$42,156.78</div>
+                                <div class="text-xs text-green-400">+1.2%</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-primary/10">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-bold">E</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">ETH</div>
+                                    <div class="text-xs text-gray-400">Ethereum</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$2,356.42</div>
+                                <div class="text-xs text-red-400">-0.8%</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-primary/10">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-bold">C</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">CAKE</div>
+                                    <div class="text-xs text-gray-400">PancakeSwap</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$1.24</div>
+                                <div class="text-xs text-green-400">+5.6%</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center mr-2">
+                                    <span class="text-white text-xs font-bold">G</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">GOUT</div>
+                                    <div class="text-xs text-gray-400">GOUT Token</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$0.42</div>
+                                <div class="text-xs text-green-400">+8.2%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-glass rounded-xl p-4 border border-primary/20">
+                    <h2 class="text-lg font-bold mb-4 flex items-center">
+                        <i class="fa fa-fire text-secondary mr-2"></i>
+                        热门代币
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">BNB/USDT</span>
+                            <span class="text-xs text-green-400">+2.4%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">BTC/BNB</span>
+                            <span class="text-xs text-green-400">+1.2%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">ETH/BNB</span>
+                            <span class="text-xs text-red-400">-0.8%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">CAKE/BNB</span>
+                            <span class="text-xs text-green-400">+5.6%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">GOUT/BNB</span>
+                            <span class="text-xs text-green-400">+8.2%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">USDT/BNB</span>
+                            <span class="text-xs text-red-400">-0.3%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">ADA/BNB</span>
+                            <span class="text-xs text-green-400">+3.1%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">DOT/BNB</span>
+                            <span class="text-xs text-red-400">-1.5%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间主内容区 -->
+            <div class="lg:col-span-2">
+                <!-- 交换面板 -->
+                <div class="bg-glass rounded-xl p-6 border border-primary/20 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold">代币交换</h2>
+                        <div class="flex space-x-2">
+                            <button class="btn-secondary rounded-md px-3 py-1 text-sm">
+                                <i class="fa fa-history mr-1"></i> 历史
+                            </button>
+                            <button class="btn-secondary rounded-md px-3 py-1 text-sm">
+                                <i class="fa fa-star mr-1"></i> 收藏
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- 输入代币 -->
+                        <div class="bg-dark/50 rounded-xl p-4 border border-primary/30 border-glow-hover">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-sm text-gray-400">您要交换</label>
+                                <div class="text-sm text-gray-400">余额: <span id="from-balance">100.00</span> <span id="from-token-symbol">BNB</span></div>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="text" id="from-amount" class="token-input flex-1 bg-transparent border-none rounded-lg px-0 py-2 text-xl font-medium focus:outline-none" placeholder="0.00" value="1.00">
+                                <button id="from-token-selector" class="flex items-center space-x-2 ml-4 bg-dark/70 hover:bg-dark border border-primary/30 rounded-lg px-3 py-2 transition-all">
+                                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold">B</span>
+                                    </div>
+                                    <span id="from-token-name">BNB</span>
+                                    <i class="fa fa-chevron-down text-xs text-gray-400"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 交换箭头 -->
+                        <div class="flex justify-center">
+                            <button id="swap-arrow" class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white arrow-pulse">
+                                <i class="fa fa-exchange text-xl"></i>
+                            </button>
+                        </div>
+
+                        <!-- 输出代币 -->
+                        <div class="bg-dark/50 rounded-xl p-4 border border-primary/30 border-glow-hover">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-sm text-gray-400">您将收到</label>
+                                <div class="text-sm text-gray-400">余额: <span id="to-balance">500.00</span> <span id="to-token-symbol">CAKE</span></div>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="text" id="to-amount" class="token-input flex-1 bg-transparent border-none rounded-lg px-0 py-2 text-xl font-medium focus:outline-none" placeholder="0.00" value="250.00" readonly>
+                                <button id="to-token-selector" class="flex items-center space-x-2 ml-4 bg-dark/70 hover:bg-dark border border-primary/30 rounded-lg px-3 py-2 transition-all">
+                                    <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold">C</span>
+                                    </div>
+                                    <span id="to-token-name">CAKE</span>
+                                    <i class="fa fa-chevron-down text-xs text-gray-400"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 交易详情 -->
+                        <div class="bg-dark/50 rounded-xl p-4 border border-primary/20">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">价格</div>
+                                    <div class="font-medium"><span id="price-display">250.00</span> <span id="price-ratio">CAKE/BNB</span></div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">滑点</div>
+                                    <div class="font-medium"><span id="slippage-display">0.5%</span></div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">手续费</div>
+                                    <div class="font-medium"><span id="fee-display">0.0025</span> <span id="fee-token">BNB</span></div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">最小接收</div>
+                                    <div class="font-medium"><span id="min-received">248.75</span> <span id="min-received-token">CAKE</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 交换按钮 -->
+                        <button id="swap-button" class="w-full btn-primary rounded-xl py-4 font-bold text-lg text-white flex items-center justify-center space-x-2">
+                            <i class="fa fa-exchange"></i>
+                            <span>交换</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 价格图表 -->
+                <div class="bg-glass rounded-xl p-6 border border-primary/20 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">价格图表</h2>
+                        <div class="flex space-x-2">
+                            <button class="chart-time-btn btn-secondary rounded-md px-3 py-1 text-sm active" data-time="24h">24H</button>
+                            <button class="chart-time-btn btn-secondary rounded-md px-3 py-1 text-sm" data-time="7d">7D</button>
+                            <button class="chart-time-btn btn-secondary rounded-md px-3 py-1 text-sm" data-time="30d">30D</button>
+                            <button class="chart-time-btn btn-secondary rounded-md px-3 py-1 text-sm" data-time="1y">1Y</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 交易历史 -->
+                <div class="bg-glass rounded-xl p-6 border border-primary/20">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">交易历史</h2>
+                        <button class="btn-secondary rounded-md px-3 py-1 text-sm">
+                            <i class="fa fa-filter mr-1"></i> 筛选
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-400 border-b border-primary/20">
+                                    <th class="pb-3 font-medium">类型</th>
+                                    <th class="pb-3 font-medium">代币</th>
+                                    <th class="pb-3 font-medium">数量</th>
+                                    <th class="pb-3 font-medium">价格</th>
+                                    <th class="pb-3 font-medium">时间</th>
+                                    <th class="pb-3 font-medium">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-primary/10 hover:bg-primary/5">
+                                    <td class="py-3">
+                                        <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs">买入</span>
+                                    </td>
+                                    <td class="py-3">CAKE</td>
+                                    <td class="py-3">100.00</td>
+                                    <td class="py-3">0.004 BNB</td>
+                                    <td class="py-3">2小时前</td>
+                                    <td class="py-3">
+                                        <span class="flex items-center text-green-400">
+                                            <i class="fa fa-check-circle mr-1"></i> 完成
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-primary/10 hover:bg-primary/5">
+                                    <td class="py-3">
+                                        <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs">卖出</span>
+                                    </td>
+                                    <td class="py-3">ETH</td>
+                                    <td class="py-3">0.5</td>
+                                    <td class="py-3">150 BNB</td>
+                                    <td class="py-3">5小时前</td>
+                                    <td class="py-3">
+                                        <span class="flex items-center text-green-400">
+                                            <i class="fa fa-check-circle mr-1"></i> 完成
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-primary/10 hover:bg-primary/5">
+                                    <td class="py-3">
+                                        <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">添加</span>
+                                    </td>
+                                    <td class="py-3">BNB/CAKE</td>
+                                    <td class="py-3">2 BNB + 500 CAKE</td>
+                                    <td class="py-3">-</td>
+                                    <td class="py-3">昨天</td>
+                                    <td class="py-3">
+                                        <span class="flex items-center text-green-400">
+                                            <i class="fa fa-check-circle mr-1"></i> 完成
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-primary/5">
+                                    <td class="py-3">
+                                        <span class="bg-purple-500/20 text-purple-400 px-2 py-1 rounded text-xs">移除</span>
+                                    </td>
+                                    <td class="py-3">BNB/USDT</td>
+                                    <td class="py-3">1 BNB + 300 USDT</td>
+                                    <td class="py-3">-</td>
+                                    <td class="py-3">2天前</td>
+                                    <td class="py-3">
+                                        <span class="flex items-center text-green-400">
+                                            <i class="fa fa-check-circle mr-1"></i> 完成
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-glass border-t border-primary/20 py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">G</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-gradient">GOUT</h2>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-4">
+                        下一代去中心化交易所，提供安全、高效、低成本的代币交换服务。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary">
+                            <i class="fa fa-telegram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary">
+                            <i class="fa fa-discord"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary">
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">产品</h3>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-primary">交换</a></li>
+                        <li><a href="#" class="hover:text-primary">流动性</a></li>
+                        <li><a href="#" class="hover:text-primary">农场</a></li>
+                        <li><a href="#" class="hover:text-primary">投票</a></li>
+                        <li><a href="#" class="hover:text-primary">NFT</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">资源</h3>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-primary">文档</a></li>
+                        <li><a href="#" class="hover:text-primary">API</a></li>
+                        <li><a href="#" class="hover:text-primary">社区</a></li>
+                        <li><a href="#" class="hover:text-primary">博客</a></li>
+                        <li><a href="#" class="hover:text-primary">教程</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">关于</h3>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-primary">团队</a></li>
+                        <li><a href="#" class="hover:text-primary">路线图</a></li>
+                        <li><a href="#" class="hover:text-primary">安全</a></li>
+                        <li><a href="#" class="hover:text-primary">隐私</a></li>
+                        <li><a href="#" class="hover:text-primary">联系我们</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-primary/10 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-sm text-gray-400 mb-4 md:mb-0">
+                    &copy; 2026 GOUT. 保留所有权利。
+                </p>
+                <div class="flex space-x-6 text-sm text-gray-400">
+                    <a href="#" class="hover:text-primary">服务条款</a>
+                    <a href="#" class="hover:text-primary">隐私政策</a>
+                    <a href="#" class="hover:text-primary">免责声明</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 代币选择器弹窗 -->
+    <div id="token-selector-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">选择代币</h3>
+                <button id="close-token-modal" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" id="token-search" class="token-input w-full bg-dark/70 border border-primary/30 rounded-lg px-4 py-2 pl-10 focus:outline-none" placeholder="搜索代币...">
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+            <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer bg-primary/10 border border-primary/30">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">B</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">BNB</div>
+                            <div class="text-xs text-gray-400">BNB Chain</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$312.45</div>
+                        <div class="text-xs text-gray-400">100.00 BNB</div>
+                    </div>
+                </div>
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">C</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">CAKE</div>
+                            <div class="text-xs text-gray-400">PancakeSwap</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$1.24</div>
+                        <div class="text-xs text-gray-400">500.00 CAKE</div>
+                    </div>
+                </div>
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">B</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">BTC</div>
+                            <div class="text-xs text-gray-400">Bitcoin</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$42,156.78</div>
+                        <div class="text-xs text-gray-400">0.05 BTC</div>
+                    </div>
+                </div>
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">E</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">ETH</div>
+                            <div class="text-xs text-gray-400">Ethereum</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$2,356.42</div>
+                        <div class="text-xs text-gray-400">2.5 ETH</div>
+                    </div>
+                </div>
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">U</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">USDT</div>
+                            <div class="text-xs text-gray-400">Tether</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$1.00</div>
+                        <div class="text-xs text-gray-400">1,000.00 USDT</div>
+                    </div>
+                </div>
+                <div class="token-option flex justify-between items-center p-3 rounded-lg cursor-pointer">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center mr-3">
+                            <span class="text-white text-xs font-bold">G</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">GOUT</div>
+                            <div class="text-xs text-gray-400">GOUT Token</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium">$0.42</div>
+                        <div class="text-xs text-gray-400">2,000.00 GOUT</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 交换确认弹窗 -->
+    <div id="swap-confirm-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">确认交换</h3>
+                <button id="close-swap-modal" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4 mb-6">
+                <div class="bg-dark/50 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-400">您要交换</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-2">
+                                <span class="text-white text-xs font-bold">B</span>
+                            </div>
+                            <span class="font-medium"><span id="confirm-from-amount">1.00</span> BNB</span>
+                        </div>
+                        <span class="text-lg font-bold">$312.45</span>
+                    </div>
+                </div>
+                <div class="flex justify-center">
+                    <i class="fa fa-arrow-down text-primary"></i>
+                </div>
+                <div class="bg-dark/50 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-400">您将收到</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center mr-2">
+                                <span class="text-white text-xs font-bold">C</span>
+                            </div>
+                            <span class="font-medium"><span id="confirm-to-amount">250.00</span> CAKE</span>
+                        </div>
+                        <span class="text-lg font-bold">$310.00</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-gray-400 mb-1">价格</div>
+                        <div class="font-medium">250.00 CAKE/BNB</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-1">滑点</div>
+                        <div class="font-medium">0.5%</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-1">手续费</div>
+                        <div class="font-medium">0.0025 BNB</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 mb-1">最小接收</div>
+                        <div class="font-medium">248.75 CAKE</div>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <button id="confirm-swap-button" class="w-full btn-primary rounded-xl py-3 font-bold text-white flex items-center justify-center space-x-2">
+                    <i class="fa fa-check"></i>
+                    <span>确认交换</span>
+                </button>
+                <button id="reject-swap-button" class="w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-bold text-white">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 交换成功弹窗 -->
+    <div id="swap-success-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 w-full max-w-md mx-4 text-center">
+            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                <i class="fa fa-check text-green-500 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">交换成功！</h3>
+            <p class="text-gray-400 mb-6">您的交易已成功处理</p>
+            <div class="bg-dark/50 rounded-lg p-4 mb-6 text-left">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm">交换</span>
+                    <span class="text-sm text-gray-400">1分钟前</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-2">
+                            <span class="text-white text-xs font-bold">B</span>
+                        </div>
+                        <span>1.00 BNB</span>
+                    </div>
+                    <i class="fa fa-arrow-right text-gray-400 mx-2"></i>
+                    <div class="flex items-center">
+                        <div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center mr-2">
+                            <span class="text-white text-xs font-bold">C</span>
+                        </div>
+                        <span>250.00 CAKE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <button id="view-transaction-button" class="w-full btn-secondary rounded-xl py-3 font-bold text-white flex items-center justify-center space-x-2">
+                    <i class="fa fa-external-link"></i>
+                    <span>查看交易</span>
+                </button>
+                <button id="close-success-modal" class="w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-bold text-white">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 钱包连接弹窗 -->
+    <div id="wallet-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-glass rounded-xl p-6 border border-primary/30 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">连接钱包</h3>
+                <button id="close-wallet-modal" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-400 mb-6">选择您想要连接的钱包</p>
+            <div class="space-y-3">
+                <button class="wallet-option w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-medium text-white flex items-center space-x-3">
+                    <i class="fa fa-metamask text-yellow-500 text-xl"></i>
+                    <span>MetaMask</span>
+                </button>
+                <button class="wallet-option w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-medium text-white flex items-center space-x-3">
+                    <i class="fa fa-mobile text-blue-500 text-xl"></i>
+                    <span>Trust Wallet</span>
+                </button>
+                <button class="wallet-option w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-medium text-white flex items-center space-x-3">
+                    <i class="fa fa-wallet text-green-500 text-xl"></i>
+                    <span>Coinbase Wallet</span>
+                </button>
+                <button class="wallet-option w-full bg-dark/70 hover:bg-dark border border-primary/30 rounded-xl py-3 font-medium text-white flex items-center space-x-3">
+                    <i class="fa fa-qrcode text-purple-500 text-xl"></i>
+                    <span>WalletConnect</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const tokens = [
+            { symbol: 'BNB', name: 'BNB', balance: 100.00, price: 312.45, color: 'bg-blue-500' },
+            { symbol: 'CAKE', name: 'CAKE', balance: 500.00, price: 1.24, color: 'bg-purple-500' },
+            { symbol: 'BTC', name: 'Bitcoin', balance: 0.05, price: 42156.78, color: 'bg-yellow-500' },
+            { symbol: 'ETH', name: 'Ethereum', balance: 2.5, price: 2356.42, color: 'bg-blue-400' },
+            { symbol: 'USDT', name: 'Tether', balance: 1000.00, price: 1.00, color: 'bg-green-500' },
+            { symbol: 'GOUT', name: 'GOUT Token', balance: 2000.00, price: 0.42, color: 'bg-pink-500' }
+        ];
+
+        // 价格历史数据 - 模拟24小时数据
+        const generatePriceHistory = (days = 1) => {
+            const data = [];
+            const now = new Date();
+            const pointsPerDay = 24;
+            const totalPoints = days * pointsPerDay;
+            
+            let price = 250; // 起始价格
+            
+            for (let i = totalPoints; i >= 0; i--) {
+                const timestamp = new Date(now - i * (24 / pointsPerDay) * 60 * 60 * 1000);
+                // 添加一些随机波动
+                price += (Math.random() - 0.5) * 10;
+                // 确保价格不会太低或太高
+                price = Math.max(200, Math.min(300, price));
+                
+                data.push({
+                    timestamp: timestamp.toISOString(),
+                    price: parseFloat(price.toFixed(2))
+                });
+            }
+            
+            return data;
+        };
+
+        // 初始化价格图表
+        let priceChart;
+        const initPriceChart = () => {
+            const ctx = document.getElementById('price-chart').getContext('2d');
+            const priceData = generatePriceHistory(1);
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: priceData.map(item => item.timestamp),
+                    datasets: [{
+                        label: 'CAKE/BNB',
+                        data: priceData.map(item => item.price),
+                        borderColor: '#00F0FF',
+                        backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: '#00F0FF',
+                        pointHoverBorderColor: '#00F0FF',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 14, 41, 0.9)',
+                            titleColor: '#E0E0E0',
+                            bodyColor: '#E0E0E0',
+                            borderColor: 'rgba(0, 240, 255, 0.5)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `价格: ${context.parsed.y} CAKE/BNB`;
+                                },
+                                title: function(tooltipItems) {
+                                    const date = new Date(tooltipItems[0].label);
+                                    return date.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(224, 224, 224, 0.5)',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8,
+                                callback: function(value, index, values) {
+                                    const date = new Date(this.getLabelForValue(value));
+                                    return date.getHours() + ':00';
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 240, 255, 0.1)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(224, 224, 224, 0.5)',
+                                callback: function(value) {
+                                    return value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        // 更新图表数据
+        const updateChartData = (days) => {
+            const priceData = generatePriceHistory(days);
+            
+            priceChart.data.labels = priceData.map(item => item.timestamp);
+            priceChart.data.datasets[0].data = priceData.map(item => item.price);
+            priceChart.update();
+        };
+
+        // 初始化粒子背景
+        const initParticles = () => {
+            const container = document.getElementById('particles-container');
+            const particleCount = 20;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // 随机大小
+                const size = Math.random() * 5 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // 随机位置
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.bottom = `-${size}px`;
+                
+                // 随机动画延迟
+                particle.style.animationDelay = `${Math.random() * 8}s`;
+                
+                // 随机透明度
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                
+                container.appendChild(particle);
+            }
+        };
+
+        // 计算交换价格
+        const calculateSwap = () => {
+            const fromAmount = parseFloat(document.getElementById('from-amount').value) || 0;
+            const fromToken = document.getElementById('from-token-symbol').textContent;
+            const toToken = document.getElementById('to-token-symbol').textContent;
+            
+            if (fromAmount <= 0) {
+                document.getElementById('to-amount').value = '0.00';
+                return;
+            }
+            
+            // 查找代币信息
+            const fromTokenInfo = tokens.find(t => t.symbol === fromToken);
+            const toTokenInfo = tokens.find(t => t.symbol === toToken);
+            
+            if (!fromTokenInfo || !toTokenInfo) return;
+            
+            // 计算价格比例
+            const priceRatio = toTokenInfo.price / fromTokenInfo.price;
+            const toAmount = (fromAmount * priceRatio).toFixed(2);
+            
+            // 更新UI
+            document.getElementById('to-amount').value = toAmount;
+            document.getElementById('price-display').textContent = priceRatio.toFixed(2);
+            document.getElementById('price-ratio').textContent = `${toToken}/${fromToken}`;
+            
+            // 计算手续费 (0.25%)
+            const fee = (fromAmount * 0.0025).toFixed(4);
+            document.getElementById('fee-display').textContent = fee;
+            document.getElementById('fee-token').textContent = fromToken;
+            
+            // 计算最小接收量 (考虑0.5%滑点)
+            const minReceived = (toAmount * 0.995).toFixed(2);
+            document.getElementById('min-received').textContent = minReceived;
+            document.getElementById('min-received-token').textContent = toToken;
+            
+            // 更新确认弹窗
+            document.getElementById('confirm-from-amount').textContent = fromAmount.toFixed(2);
+            document.getElementById('confirm-to-amount').textContent = toAmount;
+        };
+
+        // 切换代币
+        const swapTokens = () => {
+            const fromTokenSymbol = document.getElementById('from-token-symbol').textContent;
+            const toTokenSymbol = document.getElementById('to-token-symbol').textContent;
+            const fromTokenName = document.getElementById('from-token-name').textContent;
+            const toTokenName = document.getElementById('to-token-name').textContent;
+            const fromBalance = document.getElementById('from-balance').textContent;
+            const toBalance = document.getElementById('to-balance').textContent;
+            
+            // 交换代币信息
+            document.getElementById('from-token-symbol').textContent = toTokenSymbol;
+            document.getElementById('to-token-symbol').textContent = fromTokenSymbol;
+            document.getElementById('from-token-name').textContent = toTokenName;
+            document.getElementById('to-token-name').textContent = fromTokenName;
+            document.getElementById('from-balance').textContent = toBalance;
+            document.getElementById('to-balance').textContent = fromBalance;
+            
+            // 交换代币图标颜色
+            const fromTokenIcon = document.querySelector('#from-token-selector .w-8');
+            const toTokenIcon = document.querySelector('#to-token-selector .w-8');
+            const fromIconClass = fromTokenIcon.className;
+            const toIconClass = toTokenIcon.className;
+            
+            fromTokenIcon.className = toIconClass;
+            toTokenIcon.className = fromIconClass;
+            
+            // 清空输入并重新计算
+            document.getElementById('from-amount').value = '';
+            document.getElementById('to-amount').value = '0.00';
+            calculateSwap();
+        };
+
+        // 初始化事件监听
+        const initEventListeners = () => {
+            // 连接钱包按钮
+            document.getElementById('connect-wallet-btn').addEventListener('click', () => {
+                document.getElementById('wallet-modal').classList.remove('hidden');
+            });
+            
+            // 关闭钱包弹窗
+            document.getElementById('close-wallet-modal').addEventListener('click', () => {
+                document.getElementById('wallet-modal').classList.add('hidden');
+            });
+            
+            // 钱包选项点击
+            document.querySelectorAll('.wallet-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.getElementById('wallet-modal').classList.add('hidden');
+                    document.getElementById('connect-wallet-btn').innerHTML = '<i class="fa fa-check-circle text-green-500 mr-2"></i><span>0x71C...8336</span>';
+                });
+            });
+            
+            // 代币选择器
+            document.getElementById('from-token-selector').addEventListener('click', () => {
+                document.getElementById('token-selector-modal').classList.remove('hidden');
+                // 标记当前是从哪个选择器打开的
+                document.getElementById('token-selector-modal').dataset.source = 'from';
+            });
+            
+            document.getElementById('to-token-selector').addEventListener('click', () => {
+                document.getElementById('token-selector-modal').classList.remove('hidden');
+                // 标记当前是从哪个选择器打开的
+                document.getElementById('token-selector-modal').dataset.source = 'to';
+            });
+            
+            // 关闭代币选择器弹窗
+            document.getElementById('close-token-modal').addEventListener('click', () => {
+                document.getElementById('token-selector-modal').classList.add('hidden');
+            });
+            
+            // 代币选项点击
+            document.querySelectorAll('.token-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const source = document.getElementById('token-selector-modal').dataset.source;
+                    const tokenSymbol = option.querySelector('.font-medium').textContent;
+                    const tokenName = option.querySelector('.text-xs.text-gray-400').textContent;
+                    const tokenBalance = option.querySelector('.text-right .text-xs.text-gray-400').textContent.split(' ')[1];
+                    const tokenColor = option.querySelector('.w-8').className;
+                    
+                    if (source === 'from') {
+                        document.getElementById('from-token-symbol').textContent = tokenSymbol;
+                        document.getElementById('from-token-name').textContent = tokenSymbol;
+                        document.getElementById('from-balance').textContent = tokenBalance;
+                        document.querySelector('#from-token-selector .w-8').className = tokenColor;
+                    } else {
+                        document.getElementById('to-token-symbol').textContent = tokenSymbol;
+                        document.getElementById('to-token-name').textContent = tokenSymbol;
+                        document.getElementById('to-balance').textContent = tokenBalance;
+                        document.querySelector('#to-token-selector .w-8').className = tokenColor;
+                    }
+                    
+                    document.getElementById('token-selector-modal').classList.add('hidden');
+                    calculateSwap();
+                });
+            });
+            
+            // 交换箭头点击
+            document.getElementById('swap-arrow').addEventListener('click', swapTokens);
+            
+            // 输入金额变化
+            document.getElementById('from-amount').addEventListener('input', calculateSwap);
+            
+            // 交换按钮点击
+            document.getElementById('swap-button').addEventListener('click', () => {
+                document.getElementById('swap-confirm-modal').classList.remove('hidden');
+            });
+            
+            // 关闭交换确认弹窗
+            document.getElementById('close-swap-modal').addEventListener('click', () => {
+                document.getElementById('swap-confirm-modal').classList.add('hidden');
+            });
+            
+            // 确认交换按钮
+            document.getElementById('confirm-swap-button').addEventListener('click', () => {
+                document.getElementById('swap-confirm-modal').classList.add('hidden');
+                document.getElementById('swap-success-modal').classList.remove('hidden');
+            });
+            
+            // 取消交换按钮
+            document.getElementById('reject-swap-button').addEventListener('click', () => {
+                document.getElementById('swap-confirm-modal').classList.add('hidden');
+            });
+            
+            // 关闭成功弹窗
+            document.getElementById('close-success-modal').addEventListener('click', () => {
+                document.getElementById('swap-success-modal').classList.add('hidden');
+            });
+            
+            // 查看交易按钮
+            document.getElementById('view-transaction-button').addEventListener('click', () => {
+                document.getElementById('swap-success-modal').classList.add('hidden');
+                alert('交易详情页面将在实际应用中打开');
+            });
+            
+            // 图表时间选择
+            document.querySelectorAll('.chart-time-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.chart-time-btn').forEach(b => b.classList.remove('active'));
+                    // 添加当前按钮的active类
+                    btn.classList.add('active');
+                    
+                    // 更新图表数据
+                    const time = btn.dataset.time;
+                    switch (time) {
+                        case '24h':
+                            updateChartData(1);
+                            break;
+                        case '7d':
+                            updateChartData(7);
+                            break;
+                        case '30d':
+                            updateChartData(30);
+                            break;
+                        case '1y':
+                            updateChartData(365);
+                            break;
+                    }
+                });
+            });
+            
+            // 导航项点击
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // 移除所有导航项的active类
+                    document.querySelectorAll('.nav-item').forEach(navItem => navItem.classList.remove('active'));
+                    // 添加当前导航项的active类
+                    item.classList.add('active');
+                });
+            });
+        };
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            initPriceChart();
+            initEventListeners();
+            calculateSwap();
+        });
+    </script>
+</body>
+</html>
